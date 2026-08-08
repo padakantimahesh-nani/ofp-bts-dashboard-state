@@ -50,6 +50,12 @@
     "include_non_operating": true
   },
   "report_date": null,
-  "last_refreshed": null,
-  "last_row_counts": {}
+  "last_refreshed": "2026-08-08T11:01:14.967709+00:00",
+  "last_row_counts": {
+    "this_year_sales": 213254,
+    "last_year_sales": 700254,
+    "week_on_week_soh": 630244,
+    "location_master": 196,
+    "calendar": 140
+  }
 }
