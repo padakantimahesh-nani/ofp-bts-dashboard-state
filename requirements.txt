@@ -1,0 +1,13 @@
+streamlit>=1.42,<2
+pandas>=2.2,<3
+numpy>=2.0,<3
+# Python 3.12 deployment is required. PyArrow 21 provides a stable Linux wheel
+# for Python 3.12; Python 3.14 attempted an unsupported source compilation.
+pyarrow==21.0.0
+openpyxl>=3.1,<4
+requests>=2.32,<3
+PyYAML>=6.0,<7
+bcrypt>=4.2,<5
+plotly>=5.24,<7
+XlsxWriter>=3.2,<4
+Jinja2>=3.1,<4
