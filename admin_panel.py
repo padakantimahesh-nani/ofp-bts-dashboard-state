@@ -19,7 +19,7 @@ def _user_management(store: GitHubStore) -> None:
     credentials = load_credentials(store)
     users = credentials["users"]
     st.dataframe([{"Username": name, "Display name": value.get("display_name", ""), "Role": value.get("role", "user")}
-                  for name, value in users.items()], use_container_width=True, hide_index=True)
+                  for name, value in users.items()], width="stretch", hide_index=True)
 
     with st.expander("Add user"):
         with st.form("add_user", clear_on_submit=True):
@@ -49,14 +49,14 @@ def _user_management(store: GitHubStore) -> None:
                                 key="edit_role")
             new_password = st.text_input("New password (leave blank to keep current)", type="password")
             col1, col2 = st.columns(2)
-            if col1.button("Save user changes", use_container_width=True):
+            if col1.button("Save user changes", width="stretch"):
                 current.update({"display_name": display.strip() or selected, "role": role})
                 if new_password:
                     current.update({"password_hash": hash_password(new_password), "must_change_password": True})
                 save_credentials(store, credentials, f"Update dashboard user {selected}")
                 st.success("User updated.")
                 st.rerun()
-            if col2.button("Delete user", type="secondary", use_container_width=True):
+            if col2.button("Delete user", type="secondary", width="stretch"):
                 if selected == st.session_state.username:
                     st.error("You cannot delete the account currently signed in.")
                 elif current.get("role") == "admin" and sum(u.get("role") == "admin" for u in users.values()) <= 1:
@@ -98,7 +98,7 @@ def _data_sources(store: GitHubStore, config: dict[str, Any]) -> tuple[dict[str,
     if config.get("last_refreshed"):
         st.caption(f"Last successful refresh (UTC): {config['last_refreshed']}")
         st.dataframe([{"Table": k, "Rows": v} for k, v in config.get("last_row_counts", {}).items()],
-                     hide_index=True, use_container_width=True)
+                     hide_index=True, width="stretch")
     return config, bundle
 
 

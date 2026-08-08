@@ -143,6 +143,13 @@ TY is capped at that actual date; LY is capped at the matching BTS week/day
 position because the two campaigns are not calendar-date aligned. SOH uses the
 matching BTS-week snapshot.
 
+Panels 1, 4, and 5 are permanently limited to the approved BTS Types
+`BACKPACK` and `KIDS FOOTWEAR`; their BTS Type slicers display only those two
+buttons. Panel 2 is permanently limited to `KIDS FOOTWEAR`. Clearing a slicer
+removes the active selection but does not allow unrelated BTS Types into these
+reports. Panel 5 additionally includes only codes mapped in Location Master as
+`Type = Store`; it never substitutes the SOH fact's `LOC Type` for this rule.
+
 Calculated measures follow the approved definitions:
 
 - NSQ Growth = `TY NSQ / LY NSQ - 1`

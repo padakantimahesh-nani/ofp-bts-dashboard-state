@@ -70,6 +70,10 @@ def _normalize(df: pd.DataFrame, table: str) -> pd.DataFrame:
         out["Date"] = pd.to_datetime(out["Date"], errors="coerce").dt.normalize()
     if "BTS WEEK" in out:
         out["BTS WEEK"] = out["BTS WEEK"].map(canonical_week).astype("string")
+    if "BTS TYPE" in out:
+        # Normalize once so fixed slicers and panel filters remain stable when
+        # source files contain inconsistent casing or trailing spaces.
+        out["BTS TYPE"] = out["BTS TYPE"].astype("string").str.strip().str.upper()
     if table == "calendar":
         if "Week" in out and "BTS WEEK" not in out:
             out["BTS WEEK"] = out["Week"].map(canonical_week).astype("string")

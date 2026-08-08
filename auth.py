@@ -54,7 +54,7 @@ def login_form(store: GitHubStore) -> None:
     with st.form("login_form", clear_on_submit=False):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("Sign in", type="primary", width="stretch")
     if submitted:
         credentials = load_credentials(store)
         user = verify_user(credentials, username.strip(), password)
@@ -70,7 +70,7 @@ def login_form(store: GitHubStore) -> None:
 
 def logout_button() -> None:
     st.sidebar.caption(f"Signed in as {st.session_state.get('display_name', '')}")
-    if st.sidebar.button("Log out", use_container_width=True):
+    if st.sidebar.button("Log out", width="stretch"):
         for key in ("authenticated", "username", "display_name", "role", "must_change_password", "pivot_config"):
             st.session_state.pop(key, None)
         st.rerun()

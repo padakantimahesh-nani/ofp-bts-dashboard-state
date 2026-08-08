@@ -90,7 +90,7 @@ def _render_chart(frame: pd.DataFrame, rows: list[str], value_fields: list[str])
     y = numeric[:12]
     fig = px.bar(frame, x=x, y=y, barmode="group") if chart_type == "Bar" else px.line(frame, x=x, y=y, markers=True)
     fig.update_layout(legend_title_text="Values", height=480)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def render_user_panel(store: GitHubStore) -> None:
@@ -199,7 +199,7 @@ def render_user_panel(store: GitHubStore) -> None:
 
     st.subheader("Pivot Result")
     st.caption(f"Source rows after admin and user filters: {len(filtered):,}")
-    st.dataframe(display, use_container_width=True, hide_index=True, height=500)
+    st.dataframe(display, width="stretch", hide_index=True, height=500)
     _render_chart(display, rows, value_fields)
 
     st.subheader("Save or Export")
@@ -211,6 +211,6 @@ def render_user_panel(store: GitHubStore) -> None:
                                 "configuration": current}, f"Save pivot view {view_name.strip()}")
         st.success("View saved.")
     s2.download_button("Export Excel", _excel_bytes(display), "bts_pivot.xlsx",
-                       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+                       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", width="stretch")
     s3.download_button("Export CSV", display.to_csv(index=False).encode("utf-8-sig"), "bts_pivot.csv",
-                       "text/csv", use_container_width=True)
+                       "text/csv", width="stretch")

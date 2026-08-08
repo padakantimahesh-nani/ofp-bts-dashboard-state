@@ -17,6 +17,10 @@ DISPLAY_METRICS = [
     "TY GM%", "LY GM%", "GMV Growth", "WOC", "WROS", "TY ASP", "LY ASP", "ST%",
 ]
 PERCENT_COLUMNS = {"NSQ Growth", "NSV Growth", "TY GM%", "LY GM%", "GMV Growth", "ST%"}
+# These are the only BTS Type choices approved for the sales-performance
+# slicers.  The source tables can contain many other BTS types, but they must
+# never leak into Panels 1, 4, or 5 (including their "All BTS Types" totals).
+PERFORMANCE_BTS_TYPES = ("BACKPACK", "KIDS FOOTWEAR")
 
 
 def _week_number(value: Any) -> int:
@@ -46,6 +50,26 @@ def _select_default(options: list[Any], wanted: Iterable[str]) -> list[Any]:
 
 def _filter_selected(df: pd.DataFrame, column: str | None, values: list[Any]) -> pd.DataFrame:
     return df if not column or not values else df[df[column].isin(values)]
+
+
+def _restrict_bts_types(df: pd.DataFrame, allowed: Iterable[str]) -> pd.DataFrame:
+    """Permanently scope a panel to approved BTS types, independent of slicer state."""
+    column = _field(df, "BTS TYPE")
+    if not column:
+        return df.iloc[0:0].copy()
+    allowed_upper = {str(value).strip().upper() for value in allowed}
+    values = df[column].astype("string").str.strip().str.upper()
+    return df.loc[values.isin(allowed_upper)].copy()
+
+
+def _location_master_stores(df: pd.DataFrame) -> pd.DataFrame:
+    """Keep only rows whose joined Location Master record is Type = Store."""
+    # Deliberately do not fall back to the SOH fact's LOC Type.  The approved
+    # store definition comes from Location Master joined on Code = Code.
+    if "LM Type" not in df.columns:
+        return df.iloc[0:0].copy()
+    location_type = df["LM Type"].astype("string").str.strip().str.upper()
+    return df.loc[location_type.eq("STORE")].copy()
 
 
 def _clear_button(panel: str) -> int:
@@ -242,26 +266,36 @@ def _display_table(frame: pd.DataFrame, key: str, height: int = 520, subtotal_fi
         if column in PERCENT_COLUMNS or any(column.endswith(f" | {metric}") for metric in PERCENT_COLUMNS):
             show[column] = show[column] * 100
     styled = _table_styler(show, subtotal_fill=subtotal_fill)
-    st.dataframe(styled, use_container_width=True, hide_index=True, height=height, column_config=_column_config(show))
+    st.dataframe(styled, width="stretch", hide_index=True, height=height, column_config=_column_config(show))
     st.download_button("Export CSV", show.to_csv(index=False).encode("utf-8-sig"), f"{key}.csv", "text/csv",
                        key=f"download_{key}")
 
 
-def _country_and_type_slicers(panel: str, version: int, yoy: pd.DataFrame, defaults: Iterable[str]) -> tuple[list[Any], list[Any]]:
+def _country_and_type_slicers(
+    panel: str,
+    version: int,
+    yoy: pd.DataFrame,
+    allowed_types: Iterable[str],
+) -> tuple[list[Any], list[Any]]:
     country_col, type_col = _field(yoy, "Country", "LM Country"), _field(yoy, "BTS TYPE")
-    countries, types = _options(yoy, country_col), _options(yoy, type_col)
+    countries = _options(yoy, country_col)
+    # Use the approved list itself as the button source.  Building this list
+    # from the raw column was the reason unrelated BTS types appeared.
+    types = list(dict.fromkeys(str(value).strip().upper() for value in allowed_types)) if type_col else []
     c1, c2 = st.columns(2)
     with c1:
         selected_countries = _slicer(panel, version, "Country", countries, [])
     with c2:
-        selected_types = _slicer(panel, version, "BTS TYPE", types, _select_default(types, defaults) if version == 0 else [])
+        selected_types = _slicer(panel, version, "BTS TYPE", types, types if version == 0 else [])
     return selected_countries, selected_types
 
 
 def panel_department(yoy: pd.DataFrame, soh: pd.DataFrame, context: dict[str, Any]) -> None:
     st.header("Panel 1 · Department-wise BTS Performance")
+    yoy = _restrict_bts_types(yoy, PERFORMANCE_BTS_TYPES)
+    soh = _restrict_bts_types(soh, PERFORMANCE_BTS_TYPES)
     version = _clear_button("department")
-    countries, bts_types = _country_and_type_slicers("department", version, yoy, ["KIDS FOOTWEAR", "BACKPACK"])
+    countries, bts_types = _country_and_type_slicers("department", version, yoy, PERFORMANCE_BTS_TYPES)
     for frame in (yoy, soh):
         frame.drop(frame.index.difference(_filter_selected(frame, _field(frame, "Country", "LM Country"), countries).index), inplace=True)
         frame.drop(frame.index.difference(_filter_selected(frame, _field(frame, "BTS TYPE"), bts_types).index), inplace=True)
@@ -291,6 +325,8 @@ def panel_department(yoy: pd.DataFrame, soh: pd.DataFrame, context: dict[str, An
 def panel_skechers(yoy: pd.DataFrame, soh: pd.DataFrame, context: dict[str, Any]) -> None:
     st.header("Panel 2 · Skechers Review")
     st.caption("Item Sub Brand is automatically fixed to Skechers.")
+    yoy = _restrict_bts_types(yoy, ["KIDS FOOTWEAR"])
+    soh = _restrict_bts_types(soh, ["KIDS FOOTWEAR"])
     version = _clear_button("skechers")
     countries, bts_types = _country_and_type_slicers("skechers", version, yoy, ["KIDS FOOTWEAR"])
     for name, frame in (("sales", yoy), ("stock", soh)):
@@ -363,8 +399,10 @@ def panel_inventory(yoy: pd.DataFrame, soh: pd.DataFrame, context: dict[str, Any
 def panel_brands(yoy: pd.DataFrame, soh: pd.DataFrame, context: dict[str, Any]) -> None:
     st.header("Panel 4 · Brands Review")
     st.caption("Top 10 brands are ranked by TY NSV after applying the current slicers.")
+    yoy = _restrict_bts_types(yoy, PERFORMANCE_BTS_TYPES)
+    soh = _restrict_bts_types(soh, PERFORMANCE_BTS_TYPES)
     version = _clear_button("brands")
-    countries, bts_types = _country_and_type_slicers("brands", version, yoy, ["KIDS FOOTWEAR", "BACKPACK"])
+    countries, bts_types = _country_and_type_slicers("brands", version, yoy, PERFORMANCE_BTS_TYPES)
     for frame in (yoy, soh):
         selected = _filter_selected(frame, _field(frame, "Country", "LM Country"), countries)
         selected = _filter_selected(selected, _field(frame, "BTS TYPE"), bts_types)
@@ -398,6 +436,13 @@ def panel_brands(yoy: pd.DataFrame, soh: pd.DataFrame, context: dict[str, Any]) 
 
 def panel_stores(yoy: pd.DataFrame, soh: pd.DataFrame, context: dict[str, Any]) -> None:
     st.header("Panel 5 · Store-wise Performance")
+    # Panel 5 is intentionally stricter than the global row toggles: only
+    # Location Master records explicitly classified as Store are permitted.
+    yoy = _location_master_stores(_restrict_bts_types(yoy, PERFORMANCE_BTS_TYPES))
+    soh = _location_master_stores(_restrict_bts_types(soh, PERFORMANCE_BTS_TYPES))
+    if yoy.empty and soh.empty:
+        st.warning("No Location Master rows with Type = Store are available for this report.")
+        return
     version = _clear_button("stores")
     soh = filter_soh_as_of(soh, context, weekly=False)
     country_col = _field(yoy, "Country", "LM Country") or "Country"
@@ -410,9 +455,11 @@ def panel_stores(yoy: pd.DataFrame, soh: pd.DataFrame, context: dict[str, Any]) 
     with c2:
         lfl_values = _slicer("stores", version, "LFL/NLFL", _options(yoy, lfl_col), [])
     with c3:
-        type_options = _options(yoy, type_col)
-        selected_types = _slicer("stores", version, "BTS TYPE", type_options,
-                                 _select_default(type_options, ["BACKPACK", "KIDS FOOTWEAR"]) if version == 0 else [])
+        type_options = list(PERFORMANCE_BTS_TYPES)
+        selected_types = _slicer(
+            "stores", version, "BTS TYPE", type_options,
+            type_options if version == 0 else [],
+        )
     for frame in (yoy, soh):
         selected = _filter_selected(frame, _field(frame, "Country", "LM Country"), countries)
         selected = _filter_selected(selected, _field(frame, "LM LFL/NLFL", "LFL/NLFL"), lfl_values)
