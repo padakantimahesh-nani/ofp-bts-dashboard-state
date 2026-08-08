@@ -1,0 +1,55 @@
+{
+  "drive_folder_url": "https://drive.google.com/drive/folders/1ZfM-xCYmiw7JRkrM8AjsYaIK9Wv3N9tv",
+  "drive_files": {
+    "this_year_sales": {
+      "file_id": "1jFdsL6e-ILmCpDWxRcPrp1ThrYMhX-2r",
+      "filename": "This Year Sales.xlsx"
+    },
+    "last_year_sales": {
+      "file_id": "10Vb1KHaaH8xgdSreyih0K5GxfxYZRkV4",
+      "filename": "Last Year Sales.xlsx"
+    },
+    "week_on_week_soh": {
+      "file_id": "1TaBJB4pMUpZKUOcicfKuJRhx15-0mn5O",
+      "filename": "Week on week SOH.xlsx"
+    },
+    "location_master": {
+      "file_id": "1OwddBDYLyqAQ2tVXEHWuuEouhISSwMuU",
+      "filename": "Location Master.xlsx"
+    },
+    "calendar": {
+      "file_id": "1CNNM3Eqv_0u64DobToLILuOBS9PeDTdV",
+      "filename": "Calender.xlsx"
+    }
+  },
+  "visible_columns": {
+    "YOY Sales": [],
+    "SOH": []
+  },
+  "default_view": {
+    "model": "YOY Sales",
+    "rows": [
+      "BTS WEEK"
+    ],
+    "columns": [],
+    "values": [
+      {
+        "field": "TY NSQ",
+        "agg": "Sum"
+      },
+      {
+        "field": "LY NSQ",
+        "agg": "Sum"
+      }
+    ],
+    "filters": []
+  },
+  "row_filters": {
+    "include_dc": true,
+    "include_non_bbz": true,
+    "include_non_operating": true
+  },
+  "report_date": null,
+  "last_refreshed": null,
+  "last_row_counts": {}
+}
